@@ -8,6 +8,7 @@ const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TWITTER_BEARER_TOKEN = process.env.TWITTER_BEARER_TOKEN;
 const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
 const TWITTER_USERNAME = process.env.TWITTER_USERNAME;
+const VERSION_JUEGO = '13.5'; // Define la versión actual del juego
 
 const ICONS = {
     casco: '👒',
@@ -67,7 +68,8 @@ pool.query(`CREATE TABLE IF NOT EXISTS otros (
     bioma TEXT,
     seccion TEXT,
     youtube TEXT,
-    date_create DATE DEFAULT CURRENT_DATE
+    date_create DATE DEFAULT CURRENT_DATE,
+    creado TEXT
 )`, (err) => {
     if (err) {
         console.error("Error al crear la tabla:", err.message);
@@ -143,14 +145,14 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-// Comando de Discord para agregar una build con detalles opcionales
 client.on('messageCreate', async (message) => {
     if (message.content.startsWith('!add_build')) {
         // Extrae cada línea después de `!add_build`
         const lines = message.content.split('\n').slice(1); // Ignora la primera línea que es el comando
 
         // Variables para almacenar los valores de la build
-        let tipo, arma, version, youtube;
+        let tipo, arma, youtube, creadoPor;
+        //const creadoPor = message.author.username; // Usuario que ejecuta el comando
 
         // Extraer los valores de cada línea
         lines.forEach(line => {
@@ -164,25 +166,25 @@ client.on('messageCreate', async (message) => {
                 case 'arma':
                     arma = trimmedValue;
                     break;
-                case 'versión':
-                    version = trimmedValue;
-                    break;
                 case 'youtube':
                     youtube = trimmedValue;
+                    break;
+                case 'creado':
+                    creadoPor = trimmedValue;
                     break;
             }
         });
 
         // Verificar si los campos requeridos están presentes
-        if (!tipo || !arma || !version) {
-            return message.channel.send("Por favor, asegúrate de incluir al menos los campos:\nTipo, Arma, Versión.");
+        if (!tipo || !arma) {
+            return message.channel.send("Por favor, asegúrate de incluir al menos los campos:\nTipo y Arma.");
         }
 
         try {
-            // Insertar la build en la tabla `builds` y obtener su id
+            // Insertar la build en la tabla `builds` con el campo "creado" que es el nombre del usuario
             const buildResult = await pool.query(
-                `INSERT INTO builds2 (tipo, arma, version, youtube) VALUES ($1, $2, $3, $4) RETURNING id`,
-                [tipo, arma, version, youtube]
+                `INSERT INTO builds2 (tipo, arma, version, youtube, creado) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+                [tipo, arma, VERSION_JUEGO, youtube, creadoPor]
             );
             const idBuild = buildResult.rows[0].id;
 
@@ -198,7 +200,6 @@ client.on('messageCreate', async (message) => {
             const filter = response => response.author.id === message.author.id;
             const respuestaUsuario = await message.channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] });
 
-            // Verifica si el usuario respondió "sí" o "si"
             const respuesta = respuestaUsuario.first().content.toLowerCase();
             if (respuesta === 'sí' || respuesta === 'si') {
                 message.channel.send("Por favor, proporciona los detalles en el siguiente formato:\n" +
@@ -489,7 +490,7 @@ async function mostrarBuildConDetalles(message, build) {
 // Comando `!build_arma` para buscar builds por arma
 client.on('messageCreate', async (message) => {
     if (message.content.startsWith('!build_arma')) {
-        const armaBuscada = message.content.split(' ')[1];
+        const armaBuscada = message.content.slice('!build_arma'.length).trim();
 
         if (!armaBuscada) {
             return message.channel.send("Por favor, especifica el nombre del arma que deseas buscar.");
@@ -545,6 +546,24 @@ client.on('messageCreate', async (message) => {
             console.error("Error al obtener la build por tipo:", err);
             message.channel.send("Hubo un error al intentar obtener la build por tipo.");
         }
+    }
+});
+
+client.on('messageCreate', (message) => {
+    if (message.content.startsWith('!set_version')) {
+        const nuevaVersion = message.content.split(' ')[1]; // Extrae la versión después del comando
+
+        if (!nuevaVersion) {
+            return message.channel.send("Por favor, especifica la nueva versión. Ejemplo: `!set_version 14.0`");
+        }
+
+        // Actualiza la versión y el estado del bot
+        client.user.setPresence({
+            activities: [{ name: `Versión: ${nuevaVersion}`, type: 'PLAYING' }],
+            status: 'online'
+        });
+
+        message.channel.send(`La versión del juego ha sido actualizada a: ${nuevaVersion}`);
     }
 });
 
