@@ -9,6 +9,19 @@ const TWITTER_BEARER_TOKEN = process.env.TWITTER_BEARER_TOKEN;
 const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
 const TWITTER_USERNAME = process.env.TWITTER_USERNAME;
 
+const ICONS = {
+    casco: '👒',
+    casco_joyas: '💎',
+    peto: '🛡️',
+    peto_joyas: '💎',
+    cintura: '🩲',
+    cintura_joyas: '💎',
+    piernas: '🥾',
+    piernas_joyas: '💎',
+    brazales: '🧤',
+    brazales_joyas: '💎',
+    talisman: '🔮'
+};
 // const client = new Client({
 //     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
 // });
@@ -374,56 +387,163 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-client.on('messageCreate', async (message) => {
-    // Comando para buscar builds por arma
-    if (message.content.startsWith('!build_arma')) {
-        const arma = message.content.split(' ').slice(1).join(' ');
-        if (!arma) {
-            return message.channel.send("Por favor, especifica el nombre del arma después de `!build_arma`.");
-        }
+// client.on('messageCreate', async (message) => {
+//     // Comando para buscar builds por arma
+//     if (message.content.startsWith('!build_arma')) {
+//         const arma = message.content.split(' ').slice(1).join(' ');
+//         if (!arma) {
+//             return message.channel.send("Por favor, especifica el nombre del arma después de `!build_arma`.");
+//         }
 
-        try {
-            const res = await pool.query(`SELECT * FROM builds WHERE arma ILIKE $1`, [arma]);
+//         try {
+//             const res = await pool.query(`SELECT * FROM builds WHERE arma ILIKE $1`, [arma]);
 
-            if (res.rows.length === 0) {
-                message.channel.send(`No se encontraron builds para el arma: **${arma}**.`);
-            } else {
-                let respuesta = `**🔍 Builds encontradas para el arma "${arma}":**\n`;
-                res.rows.forEach(row => {
-                    respuesta += `\n**🛠️ Tipo:** ${row.tipo}\n📅 **Versión:** ${row.version}\n🔗 **YouTube:** ${row.youtube}\n`;
-                    respuesta += `------------------------------------`;
-                });
-                message.channel.send(respuesta);
-            }
-        } catch (err) {
-            console.error("Error al buscar builds por arma:", err);
-            message.channel.send("Hubo un error al intentar buscar builds por arma.");
-        }
+//             if (res.rows.length === 0) {
+//                 message.channel.send(`No se encontraron builds para el arma: **${arma}**.`);
+//             } else {
+//                 let respuesta = `**🔍 Builds encontradas para el arma "${arma}":**\n`;
+//                 res.rows.forEach(row => {
+//                     respuesta += `\n**🛠️ Tipo:** ${row.tipo}\n📅 **Versión:** ${row.version}\n🔗 **YouTube:** ${row.youtube}\n`;
+//                     respuesta += `------------------------------------`;
+//                 });
+//                 message.channel.send(respuesta);
+//             }
+//         } catch (err) {
+//             console.error("Error al buscar builds por arma:", err);
+//             message.channel.send("Hubo un error al intentar buscar builds por arma.");
+//         }
+//     }
+
+//     // Comando para buscar builds por tipo
+//     if (message.content.startsWith('!build_tipo')) {
+//         const tipo = message.content.split(' ').slice(1).join(' ');
+//         if (!tipo) {
+//             return message.channel.send("Por favor, especifica el tipo de build después de `!build_tipo`.");
+//         }
+
+//         try {
+//             const res = await pool.query(`SELECT * FROM builds WHERE tipo ILIKE $1`, [tipo]);
+
+//             if (res.rows.length === 0) {
+//                 message.channel.send(`No se encontraron builds para el tipo: **${tipo}**.`);
+//             } else {
+//                 let respuesta = `**🔍 Builds encontradas para el tipo "${tipo}":**\n`;
+//                 res.rows.forEach(row => {
+//                     respuesta += `\n**⚔️ Arma:** ${row.arma}\n📅 **Versión:** ${row.version}\n🔗 **YouTube:** ${row.youtube}\n`;
+//                     respuesta += `------------------------------------`;
+//                 });
+//                 message.channel.send(respuesta);
+//             }
+//         } catch (err) {
+//             console.error("Error al buscar builds por tipo:", err);
+//             message.channel.send("Hubo un error al intentar buscar builds por tipo.");
+//         }
+//     }
+// });
+
+
+
+// Función para mostrar los detalles en embed
+
+
+async function mostrarBuildConDetalles(message, build) {
+    // Consulta para obtener los detalles de la build
+    const detallesResult = await pool.query(
+        `SELECT * FROM build_detalles WHERE idBuild = $1`,
+        [build.id]
+    );
+
+    // Crea el embed para la build principal
+    const embed = new EmbedBuilder()
+        .setColor('#0099ff')
+        .setTitle(`Build para ${build.arma} (${build.tipo})`)
+        .setDescription(`**Versión:** ${build.version}\n**YouTube:** ${build.youtube || "(Sin enlace)"}`)
+        .setFooter({ text: 'Detalles de la build' })
+        .setTimestamp();
+
+    // Añade los detalles de la build si existen
+    if (detallesResult.rows.length > 0) {
+        const detalles = detallesResult.rows[0];
+
+        embed.addFields(
+            { name: `${ICONS.casco} Casco`, value: detalles.casco || "(Sin casco)", inline: true },
+            { name: `${ICONS.casco_joyas} Casco Joyas`, value: detalles.casco_joyas || "(Sin joyas)", inline: true },
+            { name: `${ICONS.peto} Peto`, value: detalles.peto || "(Sin peto)", inline: true },
+            { name: `${ICONS.peto_joyas} Peto Joyas`, value: detalles.peto_joyas || "(Sin joyas)", inline: true },
+            { name: `${ICONS.cintura} Cintura`, value: detalles.cintura || "(Sin cintura)", inline: true },
+            { name: `${ICONS.cintura_joyas} Cintura Joyas`, value: detalles.cintura_joyas || "(Sin joyas)", inline: true },
+            { name: `${ICONS.piernas} Piernas`, value: detalles.piernas || "(Sin piernas)", inline: true },
+            { name: `${ICONS.piernas_joyas} Piernas Joyas`, value: detalles.piernas_joyas || "(Sin joyas)", inline: true },
+            { name: `${ICONS.brazales} Brazales`, value: detalles.brazales || "(Sin brazales)", inline: true },
+            { name: `${ICONS.brazales_joyas} Brazales Joyas`, value: detalles.brazales_joyas || "(Sin joyas)", inline: true },
+            { name: `${ICONS.talisman} Talisman`, value: detalles.talisman || "(Sin talisman)", inline: true }
+        );
+    } else {
+        embed.addFields({ name: "Detalles", value: "Sin detalles adicionales para esta build." });
     }
 
-    // Comando para buscar builds por tipo
-    if (message.content.startsWith('!build_tipo')) {
-        const tipo = message.content.split(' ').slice(1).join(' ');
-        if (!tipo) {
-            return message.channel.send("Por favor, especifica el tipo de build después de `!build_tipo`.");
+    // Envía el embed en el canal
+    await message.channel.send({ embeds: [embed] });
+}
+
+// Comando `!build_arma` para buscar builds por arma
+client.on('messageCreate', async (message) => {
+    if (message.content.startsWith('!build_arma')) {
+        const armaBuscada = message.content.split(' ')[1];
+
+        if (!armaBuscada) {
+            return message.channel.send("Por favor, especifica el nombre del arma que deseas buscar.");
         }
 
         try {
-            const res = await pool.query(`SELECT * FROM builds WHERE tipo ILIKE $1`, [tipo]);
+            // Consulta para obtener builds por arma
+            const buildsResult = await pool.query(
+                `SELECT * FROM builds WHERE arma = $1`,
+                [armaBuscada]
+            );
 
-            if (res.rows.length === 0) {
-                message.channel.send(`No se encontraron builds para el tipo: **${tipo}**.`);
-            } else {
-                let respuesta = `**🔍 Builds encontradas para el tipo "${tipo}":**\n`;
-                res.rows.forEach(row => {
-                    respuesta += `\n**⚔️ Arma:** ${row.arma}\n📅 **Versión:** ${row.version}\n🔗 **YouTube:** ${row.youtube}\n`;
-                    respuesta += `------------------------------------`;
-                });
-                message.channel.send(respuesta);
+            if (buildsResult.rows.length === 0) {
+                return message.channel.send(`No se encontraron builds para el arma: ${armaBuscada}`);
+            }
+
+            // Muestra cada build con sus detalles en embeds
+            for (const build of buildsResult.rows) {
+                await mostrarBuildConDetalles(message, build);
             }
         } catch (err) {
-            console.error("Error al buscar builds por tipo:", err);
-            message.channel.send("Hubo un error al intentar buscar builds por tipo.");
+            console.error("Error al obtener la build por arma:", err);
+            message.channel.send("Hubo un error al intentar obtener la build por arma.");
+        }
+    }
+});
+
+// Comando `!build_tipo` para buscar builds por tipo
+client.on('messageCreate', async (message) => {
+    if (message.content.startsWith('!build_tipo')) {
+        const tipoBuscado = message.content.split(' ')[1];
+
+        if (!tipoBuscado) {
+            return message.channel.send("Por favor, especifica el tipo de build que deseas buscar.");
+        }
+
+        try {
+            // Consulta para obtener builds por tipo
+            const buildsResult = await pool.query(
+                `SELECT * FROM builds WHERE tipo = $1`,
+                [tipoBuscado]
+            );
+
+            if (buildsResult.rows.length === 0) {
+                return message.channel.send(`No se encontraron builds para el tipo: ${tipoBuscado}`);
+            }
+
+            // Muestra cada build con sus detalles en embeds
+            for (const build of buildsResult.rows) {
+                await mostrarBuildConDetalles(message, build);
+            }
+        } catch (err) {
+            console.error("Error al obtener la build por tipo:", err);
+            message.channel.send("Hubo un error al intentar obtener la build por tipo.");
         }
     }
 });
