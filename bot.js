@@ -130,6 +130,7 @@ client.on('messageCreate', async (message) => {
     }
 });
 
+// Comando de Discord para agregar una build con detalles opcionales
 client.on('messageCreate', async (message) => {
     if (message.content.startsWith('!add_build')) {
         // Extrae cada línea después de `!add_build`
@@ -167,10 +168,15 @@ client.on('messageCreate', async (message) => {
         try {
             // Insertar la build en la tabla `builds` y obtener su id
             const buildResult = await pool.query(
-                `INSERT INTO builds2 (tipo, arma, version, youtube) VALUES ($1, $2, $3, $4) RETURNING id`,
+                `INSERT INTO builds (tipo, arma, version, youtube) VALUES ($1, $2, $3, $4) RETURNING id`,
                 [tipo, arma, version, youtube]
             );
             const idBuild = buildResult.rows[0].id;
+
+            // Verificar si el enlace de YouTube está presente
+            if (!youtube) {
+                return message.channel.send("Build agregada sin detalles porque no se proporcionó un enlace de YouTube.");
+            }
 
             // Preguntar al usuario si desea agregar detalles
             message.channel.send("¿Deseas agregar detalles de la build? Responde con `sí` o `no`.");
@@ -179,7 +185,9 @@ client.on('messageCreate', async (message) => {
             const filter = response => response.author.id === message.author.id;
             const respuestaUsuario = await message.channel.awaitMessages({ filter, max: 1, time: 30000, errors: ['time'] });
 
-            if (respuestaUsuario.first().content.toLowerCase() === 'sí') {
+            // Verifica si el usuario respondió "sí" o "si"
+            const respuesta = respuestaUsuario.first().content.toLowerCase();
+            if (respuesta === 'sí' || respuesta === 'si') {
                 message.channel.send("Por favor, proporciona los detalles en el siguiente formato:\n" +
                     "```\n" +
                     "Casco: [nombre del casco]\n" +
