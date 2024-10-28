@@ -181,7 +181,7 @@ client.on('messageCreate', async (message) => {
         try {
             // Insertar la build en la tabla `builds` y obtener su id
             const buildResult = await pool.query(
-                `INSERT INTO builds (tipo, arma, version, youtube) VALUES ($1, $2, $3, $4) RETURNING id`,
+                `INSERT INTO builds2 (tipo, arma, version, youtube) VALUES ($1, $2, $3, $4) RETURNING id`,
                 [tipo, arma, version, youtube]
             );
             const idBuild = buildResult.rows[0].id;
@@ -498,7 +498,7 @@ client.on('messageCreate', async (message) => {
         try {
             // Consulta para obtener builds por arma
             const buildsResult = await pool.query(
-                `SELECT * FROM builds WHERE arma = $1`,
+                `SELECT * FROM builds2 WHERE arma = $1`,
                 [armaBuscada]
             );
 
@@ -529,7 +529,7 @@ client.on('messageCreate', async (message) => {
         try {
             // Consulta para obtener builds por tipo
             const buildsResult = await pool.query(
-                `SELECT * FROM builds WHERE tipo = $1`,
+                `SELECT * FROM builds2 WHERE tipo = $1`,
                 [tipoBuscado]
             );
 
