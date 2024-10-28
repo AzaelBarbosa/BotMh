@@ -458,6 +458,7 @@ async function mostrarBuildConDetalles(message, build) {
     const embed = new EmbedBuilder()
         .setColor('#0099ff')
         .setTitle(`Build para ${build.arma} (${build.tipo})`)
+        .setAuthor(`Creado Por: ${build.creado}`)
         .setDescription(`**Versión:** ${build.version}\n**YouTube:** ${build.youtube || "(Sin enlace)"}`)
         .setFooter({ text: 'Detalles de la build' })
         .setTimestamp();
