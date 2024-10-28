@@ -8,7 +8,7 @@ const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const TWITTER_BEARER_TOKEN = process.env.TWITTER_BEARER_TOKEN;
 const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
 const TWITTER_USERNAME = process.env.TWITTER_USERNAME;
-const VERSION_JUEGO = '13.5'; // Define la versión actual del juego
+const VERSION_JUEGO = '2.5'; // Define la versión actual del juego
 
 const ICONS = {
     casco: '👒',
@@ -287,8 +287,9 @@ client.on('messageCreate', async (message) => {
 client.on('messageCreate', async (message) => {
     if (message.content === '!builds') {
         try {
-            const res = await pool.query(`SELECT tipo, COUNT(*) as cantidad FROM builds2 GROUP BY tipo`);
-
+            const res = await pool.query(`SELECT tipo, COUNT(*) as cantidad FROM builds2 WHERE version = $1 GROUP BY tipo`,
+            [VERSION_JUEGO]
+        );
             // Construye el mensaje con formato
             let respuesta = '**Cantidad de builds por tipo:**\n';
             res.rows.forEach(row => {
@@ -457,8 +458,7 @@ async function mostrarBuildConDetalles(message, build) {
     // Crea el embed para la build principal
     const embed = new EmbedBuilder()
         .setColor('#0099ff')
-        .setTitle(`Build para ${build.arma} (${build.tipo})`)
-        .setAuthor(`Creado Por: ${build.creado}`)
+        .setTitle(`Build para ${build.arma} (${build.tipo}) por ${build.creado}`)
         .setDescription(`**Versión:** ${build.version}\n**YouTube:** ${build.youtube || "(Sin enlace)"}`)
         .setFooter({ text: 'Detalles de la build' })
         .setTimestamp();
@@ -500,8 +500,8 @@ client.on('messageCreate', async (message) => {
         try {
             // Consulta para obtener builds por arma
             const buildsResult = await pool.query(
-                `SELECT * FROM builds2 WHERE arma = $1`,
-                [armaBuscada]
+                `SELECT * FROM builds2 WHERE arma = $1 AND version = $2`,
+                [armaBuscada, VERSION_JUEGO]
             );
 
             if (buildsResult.rows.length === 0) {
@@ -531,8 +531,8 @@ client.on('messageCreate', async (message) => {
         try {
             // Consulta para obtener builds por tipo
             const buildsResult = await pool.query(
-                `SELECT * FROM builds2 WHERE tipo = $1`,
-                [tipoBuscado]
+                `SELECT * FROM builds2 WHERE tipo = $1 AND version = $2`,
+                [tipoBuscado, VERSION_JUEGO]
             );
 
             if (buildsResult.rows.length === 0) {
