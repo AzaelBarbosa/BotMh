@@ -104,15 +104,15 @@ client.on('messageCreate', async (message) => {
 
     if (message.author.bot) return;
 
-    if (message.channel.id !== CHANNEL_ID) {
+    //if (message.channel.id !== CHANNEL_ID) {
         // Enviar un mensaje de advertencia que se borra en 5 segundos
-        console.log(`No es el Canal Designado`);
+        //console.log(`No es el Canal Designado`);
         /* const warningMessage = await message.reply("🚫 No puedes usar comandos en este canal. Usa el canal autorizado.");
         setTimeout(() => {
             warningMessage.delete().catch(console.error); // Borrar el mensaje
         }, 5000); */
-        return;
-    }
+        //return;
+    //}
 
     if (message.content.startsWith('!get_build')) {
         const args = message.content.split(' ').slice(1);
