@@ -106,6 +106,7 @@ client.on('messageCreate', async (message) => {
 
     if (message.channel.id !== CHANNEL_ID) {
         // Enviar un mensaje de advertencia que se borra en 5 segundos
+        console.log(`No es el Canal Designado`);
         /* const warningMessage = await message.reply("🚫 No puedes usar comandos en este canal. Usa el canal autorizado.");
         setTimeout(() => {
             warningMessage.delete().catch(console.error); // Borrar el mensaje
